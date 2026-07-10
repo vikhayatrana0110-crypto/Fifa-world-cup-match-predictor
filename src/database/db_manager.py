@@ -2,19 +2,30 @@ import os
 import pandas as pd
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import select, and_, or_, desc
+from dotenv import load_dotenv
+load_dotenv()
 
 from src.database.models import (
-    engine_factory, create_all_tables, RawMatch, RawEloRating,
+    create_all_tables, RawMatch, RawEloRating,
     RawTeamStatistic, TeamFeature, MatchFeature, ModelVersion,
     Prediction, PredictionExplanation
 )
 
 class DatabaseManager:
-    def __init__(self, db_path: str = 'data/world_cup_predictor.db'):
-        self.db_path = db_path
-        self.engine = engine_factory(db_path)
+    def __init__(self, db_path: str = None):
+        # Supabase PostgreSQL connection (or fallback to env vars)
+        DB_HOST = os.getenv("SUPABASE_HOST", "db.jyeuiytzfdpvhzxqzosg.supabase.co")
+        DB_PORT = os.getenv("SUPABASE_PORT", "5432")
+        DB_USER = os.getenv("SUPABASE_USER", "postgres")
+        DB_PASSWORD = os.getenv("SUPABASE_PASSWORD", "")
+        DB_NAME = os.getenv("SUPABASE_DB", "postgres")
+        
+        DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        
+        self.engine = create_engine(DATABASE_URL)
         self.SessionLocal = sessionmaker(bind=self.engine)
         self.session: Optional[Session] = None
 

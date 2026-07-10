@@ -1,0 +1,56 @@
+﻿# Virtual environment
+.venv/
+venv/
+env/
+
+# Python cache & bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE & editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing & debugging
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data & models (regeneratable via pipeline)
+data/raw/results.csv
+data/world_cup_predictor.db
+models/*.joblib
+
+# Streamlit & secrets
+.streamlit/secrets.toml
+.streamlit/cache/
+
+# Environment variables & secrets (for Supabase & API keys)
+.env
+.env.local
+.env*.local
+
+# Logs & temp files
+*.log
+*.tmp
+temp/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Local dev files
+CLAUDE.md

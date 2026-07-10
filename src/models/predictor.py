@@ -1,0 +1,160 @@
+import os
+import joblib
+import pandas as pd
+import numpy as np
+from typing import Dict, Any, Optional, Union
+from src.database.db_manager import DatabaseManager
+from src.features.match_features import MatchFeatureEngine
+
+class MatchPredictor:
+    def __init__(
+        self,
+        classifier_path: Optional[str] = None,
+        home_goals_path: Optional[str] = None,
+        away_goals_path: Optional[str] = None,
+        db_manager: Optional[DatabaseManager] = None
+    ):
+        self.db_manager = db_manager
+        self.feature_engine = MatchFeatureEngine()
+        
+        # Load classifier
+        if classifier_path:
+            self.classifier = joblib.load(classifier_path)
+        elif db_manager:
+            self.classifier = self._load_active_model_from_db('outcome_classifier')
+        else:
+            self.classifier = self._load_latest_local_model('outcome_classifier')
+            
+        # Load home goals regressor
+        if home_goals_path:
+            self.home_goals_model = joblib.load(home_goals_path)
+        elif db_manager:
+            self.home_goals_model = self._load_active_model_from_db('home_goals_regressor')
+        else:
+            self.home_goals_model = self._load_latest_local_model('home_goals_regressor')
+            
+        # Load away goals regressor
+        if away_goals_path:
+            self.away_goals_model = joblib.load(away_goals_path)
+        elif db_manager:
+            self.away_goals_model = self._load_active_model_from_db('away_goals_regressor')
+        else:
+            self.away_goals_model = self._load_latest_local_model('away_goals_regressor')
+
+    def _load_active_model_from_db(self, model_name: str) -> Any:
+        """Query database for the active version of a specific model name."""
+        if not self.db_manager:
+            raise ValueError("db_manager must be set to load models from database.")
+        with self.db_manager:
+            session = self.db_manager.get_session()
+            from src.database.models import ModelVersion
+            model_record = session.query(ModelVersion).filter(
+                ModelVersion.model_name == model_name,
+                ModelVersion.is_active == True
+            ).first()
+            if not model_record:
+                raise FileNotFoundError(f"No active database model found with name '{model_name}'")
+            return joblib.load(model_record.model_path)
+
+    def _load_latest_local_model(self, model_name: str) -> Any:
+        """Scan models/ directory for the latest model with the specified prefix."""
+        model_dir = 'models'
+        if not os.path.exists(model_dir):
+            raise FileNotFoundError(f"Model directory '{model_dir}' does not exist.")
+            
+        files = [f for f in os.listdir(model_dir) if f.startswith(model_name) and f.endswith('.joblib')]
+        if not files:
+            raise FileNotFoundError(f"No local model file starting with '{model_name}' found in '{model_dir}'")
+            
+        # Sort and take latest (which should match alphabetically/timestamp/version sorting)
+        files.sort()
+        path = os.path.join(model_dir, files[-1])
+        return joblib.load(path)
+
+    def predict(self, feature_vector: Union[Dict[str, Any], pd.DataFrame]) -> Dict[str, Any]:
+        """
+        Run inference using the feature vector.
+        Returns outcome probabilities, expected goals, and confidence scores.
+        """
+        if isinstance(feature_vector, dict):
+            df = pd.DataFrame([feature_vector])
+        else:
+            df = feature_vector.copy()
+            
+        # Ensure correct column order
+        cols = self.feature_engine.get_feature_columns()
+        X = df[cols]
+        
+        # Predict W/D/L probabilities
+        # Outcome encoding: 0=Away win, 1=Draw, 2=Home win
+        probs = self.classifier.predict_proba(X)[0]
+        p_away = float(probs[0])
+        p_draw = float(probs[1])
+        p_home = float(probs[2])
+        
+        # Predict Expected Goals
+        exg_home = max(0.0, float(self.home_goals_model.predict(X)[0]))
+        exg_away = max(0.0, float(self.away_goals_model.predict(X)[0]))
+        
+        # Calculate confidence metric: distance from highest probability to second highest
+        sorted_probs = sorted([p_home, p_draw, p_away], reverse=True)
+        confidence = float(sorted_probs[0] - sorted_probs[1])
+        
+        # Determine prediction label
+        max_idx = int(np.argmax(probs))
+        if max_idx == 2:
+            outcome_label = 'Home Win'
+        elif max_idx == 1:
+            outcome_label = 'Draw'
+        else:
+            outcome_label = 'Away Win'
+            
+        return {
+            'home_win_prob': p_home,
+            'draw_prob': p_draw,
+            'away_win_prob': p_away,
+            'expected_home_goals': exg_home,
+            'expected_away_goals': exg_away,
+            'confidence': confidence,
+            'outcome': outcome_label
+        }
+
+    def predict_match(
+        self,
+        home_team: str,
+        away_team: str,
+        tournament: str,
+        team_features_df: pd.DataFrame,
+        elo_history_df: pd.DataFrame,
+        matches_df: pd.DataFrame,
+        save_to_db: bool = True
+    ) -> Dict[str, Any]:
+        """
+        High-level wrapper to generate features, predict outcome, and save record to DB.
+        """
+        # 1. Generate feature vector
+        feats = self.feature_engine.create_prediction_features(
+            home_team, away_team, tournament, team_features_df, elo_history_df, matches_df
+        )
+        
+        # 2. Run prediction
+        pred = self.predict(feats)
+        pred['home_team'] = home_team
+        pred['away_team'] = away_team
+        
+        # 3. Optionally save to DB
+        if save_to_db and self.db_manager:
+            # Get active model_id if available
+            model_id = None
+            with self.db_manager:
+                active_model = self.db_manager.get_active_model()
+                if active_model:
+                    model_id = active_model.model_id
+                    
+            pred['model_id'] = model_id
+            
+            # Save predictions and return the generated ID
+            pred_id = self.db_manager.save_prediction(pred)
+            pred['prediction_id'] = pred_id
+            
+        return pred

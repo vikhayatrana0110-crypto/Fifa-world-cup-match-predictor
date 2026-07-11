@@ -33,11 +33,6 @@ from src.models.trainer import ModelTrainer
 # ---------------------------------------------------------------------------
 # CSS
 # ---------------------------------------------------------------------------
-try:
-    st.write("DEBUG - SUPABASE_USER from st.secrets:", st.secrets.get("SUPABASE_USER", "NOT FOUND"))
-except Exception:
-    st.write("DEBUG - No st.secrets available (running locally)")
-st.write("DEBUG - os.environ SUPABASE_USER:", os.environ.get("SUPABASE_USER", "NOT FOUND"))
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');

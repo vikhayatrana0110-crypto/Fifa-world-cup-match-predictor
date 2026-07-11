@@ -1,8 +1,12 @@
+import streamlit as st
 import os
+if hasattr(st, "secrets"):
+    for key in ["SUPABASE_HOST", "SUPABASE_PORT", "SUPABASE_USER", "SUPABASE_PASSWORD", "SUPABASE_DB"]:
+        if key in st.secrets:
+            os.environ[key] = str(st.secrets[key])
 import sys
 import pandas as pd
 import numpy as np
-import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from typing import Optional

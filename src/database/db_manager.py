@@ -1,12 +1,4 @@
-import streamlit as st
 import os
-
-# Bridge Streamlit secrets into environment variables
-if hasattr(st, "secrets"):
-    for key in ["SUPABASE_HOST", "SUPABASE_PORT", "SUPABASE_USER", "SUPABASE_PASSWORD", "SUPABASE_DB"]:
-        if key in st.secrets:
-            os.environ[key] = str(st.secrets[key])
-
 import pandas as pd
 from datetime import datetime, date
 from typing import List, Dict, Any, Optional

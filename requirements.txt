@@ -16,6 +16,8 @@ matplotlib==3.11.0
 sqlalchemy==2.0.51
 joblib==1.5.3
 requests==2.34.2
+psycopg2-binary
+python-dotenv
 
 # Football data
 statsbombpy==1.21.0

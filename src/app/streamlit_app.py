@@ -80,11 +80,11 @@ def get_db() -> DatabaseManager:
     return db
 
 
-@st.cache_resource
 def get_predictor() -> Optional[MatchPredictor]:
     try:
         return MatchPredictor(db_manager=DatabaseManager())
-    except Exception:
+    except Exception as e:
+        st.error(f"Predictor error: {e}")
         return None
 
 
@@ -159,6 +159,7 @@ else:
             match_feats = db.get_all_match_features()
             ModelTrainer().run_training_pipeline(match_feats, db_manager=db)
         st.sidebar.success("Model retrained successfully!")
+        st.cache_resource.clear()
         st.rerun()
 
 st.sidebar.markdown("""

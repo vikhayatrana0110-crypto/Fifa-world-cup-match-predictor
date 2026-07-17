@@ -1,4 +1,4 @@
-# ⚽ World Cup AI Predictor
+# World Cup AI Predictor
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/)
 [![XGBoost](https://img.shields.io/badge/ML-XGBoost-orange.svg)](https://xgboost.readthedocs.io/)
@@ -10,7 +10,7 @@ A machine learning analytics platform that predicts international association fo
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 - **Match Prediction**: Generates home win, draw, and away win probabilities alongside Expected Goals (xG) estimates for both teams.
 - **Explainability**: Integrated SHAP (SHapley Additive exPlanations) values to detail exactly why the model made a prediction (positive/negative contributors).
@@ -21,7 +21,7 @@ A machine learning analytics platform that predicts international association fo
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Data Engineering**: `pandas`, `numpy`, `SQLAlchemy`, `SQLite`
 - **Machine Learning**: `scikit-learn`, `xgboost`, `shap`, `joblib`
@@ -29,7 +29,7 @@ A machine learning analytics platform that predicts international association fo
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 world-cup-ai-predictor/
@@ -63,7 +63,7 @@ world-cup-ai-predictor/
 
 ---
 
-## 🚀 Quick Start Guide
+## Quick Start Guide
 
 ### 1. Clone & Set Up Environment
 First, ensure you have Python 3.8+ installed. Navigate to the repository and install the dependencies:
@@ -87,7 +87,7 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 Verify database, features, and model prediction logic using `unittest`:
 ```bash
 python -m unittest discover tests
@@ -95,5 +95,5 @@ python -m unittest discover tests
 
 ---
 
-## 📝 License
+## License
 This project is licensed under the MIT License.
